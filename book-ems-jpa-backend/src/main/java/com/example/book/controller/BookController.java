@@ -3,6 +3,7 @@ package com.example.book.controller;
 
 
 import com.example.book.dto.BookDto;
+import com.example.book.dto.ResponseDto;
 import com.example.book.service.IBookService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -30,7 +31,7 @@ public class BookController {
 
     @GetMapping("/{id}")
     @Operation(summary = "根據bookId取得書本", description = "根據ID回傳書本列表，包含出版社資訊")
-    public BookDto getBookById(Long id){
+    public BookDto getBookById(@PathVariable Long id){
         return bookService.getBookById(id);
     }
 
@@ -50,9 +51,9 @@ public class BookController {
 
     @DeleteMapping("/{id}")
     @Operation(summary = "刪除書本", description = "根據 ID 永久刪除指定書籍")
-    public ResponseEntity<String> deleteBook(@PathVariable Long id) {
+    public ResponseEntity<ResponseDto> deleteBook(@PathVariable Long id) {
         bookService.deleteBook(id);
-        return ResponseEntity.ok("book deleted");
+        return ResponseEntity.ok(new ResponseDto("200","成功刪除書本"));
     }
 
     @GetMapping("/search")

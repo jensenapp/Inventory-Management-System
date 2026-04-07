@@ -4,6 +4,7 @@ package com.example.book.service.impl;
 import com.example.book.dto.BookDto;
 import com.example.book.entity.Book;
 import com.example.book.entity.Publisher;
+import com.example.book.exception.ResourceNotFoundException;
 import com.example.book.mapper.BookMapper;
 import com.example.book.repository.BookRepository;
 import com.example.book.repository.PublisherRepository;
@@ -34,19 +35,19 @@ private final PublisherRepository publisherRepository;
 
     @Override
     public BookDto getBookById(Long bookId) {
-        Book book = bookRepository.findById(bookId).orElseThrow(() -> new RuntimeException("book not found"));
+        Book book = bookRepository.findById(bookId).orElseThrow(() -> new ResourceNotFoundException("Book","bookId",bookId.toString()));
         return BookMapper.mapToBookDto(book);
     }
 
     @Override
     public BookDto updateBooks(Long bookId, BookDto bookDto) {
-        Book book = bookRepository.findById(bookId).orElseThrow(() -> new RuntimeException("book not found"));
+        Book book = bookRepository.findById(bookId).orElseThrow(() -> new ResourceNotFoundException("Book","bookId",bookId.toString()));
         book.setTitle(bookDto.getTitle());
         book.setAuthor(bookDto.getAuthor());
         book.setPrice(bookDto.getPrice());
         book.setPublishDate(bookDto.getPublishDate());
         if (bookDto.getPublisherId()!=null){
-            Publisher publisher = publisherRepository.findById(bookDto.getPublisherId()).orElseThrow(() -> new RuntimeException("Publisher not found"));
+            Publisher publisher = publisherRepository.findById(bookDto.getPublisherId()).orElseThrow(() -> new ResourceNotFoundException("Publisher","PublisherId",bookDto.getPublisherId().toString()));
             book.setPublisher(publisher);
         }
 
@@ -60,7 +61,7 @@ private final PublisherRepository publisherRepository;
     public BookDto createBook(BookDto bookDto) {
         Book book = BookMapper.mapToBook(bookDto);
         if (bookDto.getPublisherId()!=null){
-            Publisher publisher = publisherRepository.findById(bookDto.getPublisherId()).orElseThrow(() -> new RuntimeException("Publisher not found"));
+            Publisher publisher = publisherRepository.findById(bookDto.getPublisherId()).orElseThrow(() -> new ResourceNotFoundException("Publisher","PublisherId",bookDto.getPublisherId().toString()));
             book.setPublisher(publisher);
         }
         Book saveBook = bookRepository.save(book);
