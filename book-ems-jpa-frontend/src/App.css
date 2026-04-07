@@ -1,0 +1,9 @@
+.footer {
+  position: fixed;      /* 固定在頁面底部 */
+  bottom: 0;            /* 貼齊底部 */
+  width: 100%;          /* 寬度佔滿整個畫面 */
+  height: 50px;         /* 高度 50px */
+  background-color: black; /* ✅ 改成 black 或 #333 */
+  text-align: center;   /* 文字置中 */
+  color: white;         /* 白色文字 */
+}
