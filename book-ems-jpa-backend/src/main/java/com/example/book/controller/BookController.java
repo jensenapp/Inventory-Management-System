@@ -7,6 +7,7 @@ import com.example.book.dto.ResponseDto;
 import com.example.book.service.IBookService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -37,14 +38,14 @@ public class BookController {
 
     @PostMapping
     @Operation(summary = "新增書本", description = "建立一本新書，可綁定已存在的出版社 ID")
-    public ResponseEntity<BookDto> createBook(@RequestBody BookDto bookDto) {
+    public ResponseEntity<BookDto> createBook(@RequestBody @Valid BookDto bookDto) {
         BookDto book = bookService.createBook(bookDto);
         return ResponseEntity.status(HttpStatus.CREATED).body(book);
     }
 
     @PutMapping("/{id}")
     @Operation(summary = "更新書本", description = "根據 ID 更新書本資訊")
-    public ResponseEntity<BookDto> updateBook(@PathVariable Long id, @RequestBody BookDto bookDto) {
+    public ResponseEntity<BookDto> updateBook(@PathVariable Long id, @Valid @RequestBody BookDto bookDto) {
         BookDto bookDto1 = bookService.updateBooks(id, bookDto);
         return ResponseEntity.ok(bookDto1);
     }
