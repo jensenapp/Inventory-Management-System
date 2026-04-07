@@ -7,6 +7,7 @@ import java.util.List;
 
 public interface IBookService {
     List<BookDto> getAllBooks();
+    BookDto getBookById(Long bookId);
     BookDto updateBooks(Long bookId, BookDto bookDto);
     void deleteBook(Long bookId);
     BookDto createBook(BookDto bookDto);

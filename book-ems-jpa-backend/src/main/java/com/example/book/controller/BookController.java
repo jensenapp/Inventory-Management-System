@@ -23,9 +23,15 @@ public class BookController {
     private final IBookService bookService;
 
     @GetMapping
-    @Operation(summary = "取得所有書本", description = "回傳系統中所有的書本列表，包含出版社資訊") // 幫單一 API 加上說明
+    @Operation(summary = "取得所有書本", description = "回傳系統中所有的書本列表，包含出版社資訊")
     public List<BookDto> getAllBooks() {
         return bookService.getAllBooks();
+    }
+
+    @GetMapping("/{id}")
+    @Operation(summary = "根據bookId取得書本", description = "根據ID回傳書本列表，包含出版社資訊")
+    public BookDto getBookById(Long id){
+        return bookService.getBookById(id);
     }
 
     @PostMapping

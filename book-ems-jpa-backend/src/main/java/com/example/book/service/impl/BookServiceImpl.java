@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -29,6 +30,12 @@ private final PublisherRepository publisherRepository;
         List<Book> bookList = bookRepository.findAllWithPublisher();
         List<BookDto> bookDtoList = bookList.stream().map(book -> BookMapper.mapToBookDto(book)).toList();
         return bookDtoList;
+    }
+
+    @Override
+    public BookDto getBookById(Long bookId) {
+        Book book = bookRepository.findById(bookId).orElseThrow(() -> new RuntimeException("book not found"));
+        return BookMapper.mapToBookDto(book);
     }
 
     @Override
