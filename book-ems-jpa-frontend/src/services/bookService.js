@@ -1,17 +1,23 @@
+import apiClient from "../api/apiClient"; 
 
-import axios from "axios";
+const BOOK_URL = "/books";
 
-const API_URL = "http://localhost:8080/api/books";
+// export const getAllBooks = () => apiClient.get(BOOK_URL);
 
-export const getAllBooks = () => axios.get(API_URL);
+export const getAllBooks = (pageNo = 0, pageSize = 5, sortBy = "bookId", sortDir = "desc") => {
+  return apiClient.get(`${BOOK_URL}?pageNo=${pageNo}&pageSize=${pageSize}&sortBy=${sortBy}&sortDir=${sortDir}`);
+};
+export const getBookById = (id) => apiClient.get(`${BOOK_URL}/${id}`);
 
-export const getBookById=(id)=>axios.get(`${API_URL}/${id}`)
+export const createBook = (data) => apiClient.post(BOOK_URL, data);
 
-export const createBook = (data) => axios.post(API_URL, data);
+export const updateBook = (id, data) => apiClient.put(`${BOOK_URL}/${id}`, data);
 
-export const updateBook = (id, data) => axios.put(`${API_URL}/${id}`, data);
+export const deleteBook = (id) => apiClient.delete(`${BOOK_URL}/${id}`);
 
-export const deleteBook = (id) => axios.delete(`${API_URL}/${id}`);
+export const searchBook = (text, pageNo = 0, pageSize = 5, sortBy = "bookId", sortDir = "desc") => {
+  return apiClient.get(`${BOOK_URL}/search?text=${text}&pageNo=${pageNo}&pageSize=${pageSize}&sortBy=${sortBy}&sortDir=${sortDir}`);
+};
 
-export const searchBook = (text) => axios.get(`${API_URL}/search?text=${text}`);  
+// export const searchBook = (text) => apiClient.get(`${BOOK_URL}/search?text=${text}`);
 // (錯誤： export const searchBook=(text)=>axios.get(`${API_URL}/${text}`);
