@@ -93,7 +93,8 @@ public class SecurityConfig {
     @Bean
     public CommandLineRunner initData(RoleRepository roleRepository,
                                       UserRepository userRepository,
-                                      PasswordEncoder passwordEncoder) {
+                                      PasswordEncoder passwordEncoder,
+                                      PublisherRepository publisherRepository) { // 👈 就是這個參數剛剛漏掉了！
         return args -> {
             // 初始化角色
             Role userRole = roleRepository.findByRoleName(AppRole.ROLE_USER)
@@ -114,6 +115,8 @@ public class SecurityConfig {
                 admin.setRole(adminRole);
                 userRepository.save(admin);
             }
+
+            // 初始化預設的出版社
             if (publisherRepository.count() == 0) {
                 Publisher p1 = new Publisher();
                 p1.setPublisherName("碁峰資訊");
