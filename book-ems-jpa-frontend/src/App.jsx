@@ -6,7 +6,7 @@ import Login from "./components/Login";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
-import Register from "./components/register";
+import Register from "./components/Register";
 
 export default function App() {
   return (

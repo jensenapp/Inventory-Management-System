@@ -43,7 +43,7 @@ services:
     depends_on:
       - backend
     ports:
-      # 伺服器的 8082 對應到容器的 80
+      # 伺服器的 8085 對應到容器的 80
       - "8085:80"
     networks:
       - ems-network
