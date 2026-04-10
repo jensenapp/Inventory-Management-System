@@ -20,7 +20,7 @@ services:
 
   backend:
     build: 
-      context: ./backend
+      context: ./book-ems-jpa-backend
     container_name: book-ems-backend
     restart: unless-stopped
     depends_on:
@@ -37,7 +37,7 @@ services:
 
   frontend:
     build:
-      context: ./frontend
+      context: ./book-ems-jpa-frontend
     container_name: book-ems-frontend
     restart: unless-stopped
     depends_on:
