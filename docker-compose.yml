@@ -31,7 +31,7 @@ services:
       - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD:-emspassword}
     ports:
       # 伺服器的 8081 對應到容器的 8080
-      - "127.0.0.1:8081:8080"
+      - "8081:8080"
     networks:
       - ems-network
 
@@ -44,7 +44,7 @@ services:
       - backend
     ports:
       # 伺服器的 8082 對應到容器的 80
-      - "127.0.0.1:8082:80"
+      - "8082:80"
     networks:
       - ems-network
 
