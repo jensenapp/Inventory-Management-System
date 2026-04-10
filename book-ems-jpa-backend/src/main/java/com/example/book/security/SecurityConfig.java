@@ -26,7 +26,8 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-
+import com.example.book.entity.Publisher;
+import com.example.book.repository.PublisherRepository;
 import java.util.List;
 
 @Configuration
@@ -112,6 +113,15 @@ public class SecurityConfig {
                 User admin = new User("admin", "admin@example.com", passwordEncoder.encode("adminPass"), "momo");
                 admin.setRole(adminRole);
                 userRepository.save(admin);
+            }
+            if (publisherRepository.count() == 0) {
+                Publisher p1 = new Publisher();
+                p1.setPublisherName("碁峰資訊");
+                publisherRepository.save(p1);
+
+                Publisher p2 = new Publisher();
+                p2.setPublisherName("歐萊禮 (O'Reilly)");
+                publisherRepository.save(p2);
             }
         };
     }
