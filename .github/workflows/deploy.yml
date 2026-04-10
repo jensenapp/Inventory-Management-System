@@ -1,0 +1,37 @@
+name: Deploy Book EMS to VPS
+
+on:
+  push:
+    branches:
+      - main  # 只有當程式碼推送到 main 分支時才會觸發
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 執行 SSH 連線與部署指令
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            # 1. 進入伺服器上的部署目錄
+            cd ~/book-ems-deploy
+
+            # 2. 檢查是否已經有專案檔案。沒有就 Clone，有就 Pull 更新
+            if [ ! -d ".git" ]; then
+              echo "首次部署：正在 Clone 儲存庫..."
+              git clone https://github.com/jensenapp/Inventory-Management-System.git .
+            else
+              echo "更新部署：正在 Pull 最新程式碼..."
+              git pull origin main
+            fi
+
+            # 3. 停止舊容器並強制重新編譯、啟動新容器 (-d 背景執行, --build 強制重新打包鏡像)
+            docker compose down
+            docker compose up -d --build
+
+            # 4. 清理部署過程中產生的無用（懸空）鏡像，避免伺服器硬碟爆滿
+            docker image prune -f

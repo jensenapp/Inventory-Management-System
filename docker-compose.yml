@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  db:
+    image: mysql:8.0
+    container_name: book-ems-db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootpassword}
+      MYSQL_DATABASE: book_ems_db
+      MYSQL_USER: ems_user
+      MYSQL_PASSWORD: ${DB_PASSWORD:-emspassword}
+    ports:
+      # 綁定在 127.0.0.1 確保不對外暴露，僅供本地/NPM使用
+      - "127.0.0.1:3307:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - ems-network
+
+  backend:
+    build: 
+      context: ./backend
+    container_name: book-ems-backend
+    restart: unless-stopped
+    depends_on:
+      - db
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://db:3306/book_ems_db?useSSL=false&serverTimezone=UTC
+      - SPRING_DATASOURCE_USERNAME=ems_user
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD:-emspassword}
+    ports:
+      # 伺服器的 8081 對應到容器的 8080
+      - "127.0.0.1:8081:8080"
+    networks:
+      - ems-network
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: book-ems-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      # 伺服器的 8082 對應到容器的 80
+      - "127.0.0.1:8082:80"
+    networks:
+      - ems-network
+
+networks:
+  ems-network:
+    driver: bridge
+
+volumes:
+  db_data:
