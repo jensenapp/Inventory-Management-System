@@ -2,7 +2,7 @@ import axios from "axios";
 
 // 1. 創建一個自訂的 Axios 實體 (設定共用的 Base URL)
 const apiClient = axios.create({
-  baseURL: "http://localhost:8080/api",
+  baseURL: "https://ems-api.jensen-store.online",
   headers: {
     "Content-Type": "application/json",
   },
