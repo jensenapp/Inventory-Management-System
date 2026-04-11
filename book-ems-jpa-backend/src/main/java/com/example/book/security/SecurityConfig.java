@@ -133,16 +133,45 @@ public class SecurityConfig {
 
             // 書本初始化 (如果書本資料表是空的，就自動塞入 10 本書)
             if (bookRepository.count() == 0) {
-                Book b1 = new Book(); b1.setTitle("Spring Boot 3 實戰開發"); b1.setAuthor("王明"); b1.setPrice(650); b1.setPublishDate(LocalDate.parse("2023-11-15")); b1.setPublisher(p1); bookRepository.save(b1);
-                Book b2 = new Book(); b2.setTitle("React 學習手冊 (第二版)"); b2.setAuthor("Alex Banks"); b2.setPrice(720); b2.setPublishDate(LocalDate.parse("2022-05-20")); b2.setPublisher(p2); bookRepository.save(b2);
-                Book b3 = new Book(); b3.setTitle("Docker 容器化架構指南"); b3.setAuthor("陳華"); b3.setPrice(580); b3.setPublishDate(LocalDate.parse("2023-08-10")); b3.setPublisher(p1); bookRepository.save(b3);
-                Book b4 = new Book(); b4.setTitle("Java 深入淺出 (第三版)"); b4.setAuthor("Kathy Sierra"); b4.setPrice(850); b4.setPublishDate(LocalDate.parse("2021-03-12")); b4.setPublisher(p2); bookRepository.save(b4);
-                Book b5 = new Book(); b5.setTitle("JavaScript 犀牛書"); b5.setAuthor("David Flanagan"); b5.setPrice(1200); b5.setPublishDate(LocalDate.parse("2020-09-05")); b5.setPublisher(p2); bookRepository.save(b5);
-                Book b6 = new Book(); b6.setTitle("Kubernetes 權威指南"); b6.setAuthor("李於"); b6.setPrice(900); b6.setPublishDate(LocalDate.parse("2023-12-01")); b6.setPublisher(p1); bookRepository.save(b6);
-                Book b7 = new Book(); b7.setTitle("Python 網路爬蟲實戰"); b7.setAuthor("趙新); b7.setPrice(450); b7.setPublishDate(LocalDate.parse("2022-11-28")); b7.setPublisher(p1); bookRepository.save(b7);
-                Book b8 = new Book(); b8.setTitle("雲端架構設計與實務"); b8.setAuthor("林恩"); b8.setPrice(780); b8.setPublishDate(LocalDate.parse("2024-01-10")); b8.setPublisher(p2); bookRepository.save(b8);
-                Book b9 = new Book(); b9.setTitle("SQL 效能調校聖經"); b9.setAuthor("張三"); b9.setPrice(600); b9.setPublishDate(LocalDate.parse("2019-07-22")); b9.setPublisher(p1); bookRepository.save(b9);
-                Book b10 = new Book(); b10.setTitle("演算法圖鑑"); b10.setAuthor("Aditya Bhargava"); b10.setPrice(480); b10.setPublishDate(LocalDate.parse("2018-04-15")); b10.setPublisher(p2); bookRepository.save(b10);
+                Book b1 = new Book();
+                b1.setTitle("Spring Boot 3 實戰開發"); b1.setAuthor("王大明"); b1.setPrice(650); b1.setPublishDate(LocalDate.parse("2023-11-15")); b1.setPublisher(p1);
+                bookRepository.save(b1);
+
+                Book b2 = new Book();
+                b2.setTitle("React 學習手冊 (第二版)"); b2.setAuthor("Alex Banks"); b2.setPrice(720); b2.setPublishDate(LocalDate.parse("2022-05-20")); b2.setPublisher(p2);
+                bookRepository.save(b2);
+
+                Book b3 = new Book();
+                b3.setTitle("Docker 容器化架構指南"); b3.setAuthor("陳小華"); b3.setPrice(580); b3.setPublishDate(LocalDate.parse("2023-08-10")); b3.setPublisher(p1);
+                bookRepository.save(b3);
+
+                Book b4 = new Book();
+                b4.setTitle("Java 深入淺出 (第三版)"); b4.setAuthor("Kathy Sierra"); b4.setPrice(850); b4.setPublishDate(LocalDate.parse("2021-03-12")); b4.setPublisher(p2);
+                bookRepository.save(b4);
+
+                Book b5 = new Book();
+                b5.setTitle("JavaScript 犀牛書"); b5.setAuthor("David Flanagan"); b5.setPrice(1200); b5.setPublishDate(LocalDate.parse("2020-09-05")); b5.setPublisher(p2);
+                bookRepository.save(b5);
+
+                Book b6 = new Book();
+                b6.setTitle("Kubernetes 權威指南"); b6.setAuthor("李四"); b6.setPrice(900); b6.setPublishDate(LocalDate.parse("2023-12-01")); b6.setPublisher(p1);
+                bookRepository.save(b6);
+
+                Book b7 = new Book();
+                b7.setTitle("Python 網路爬蟲實戰"); b7.setAuthor("趙六"); b7.setPrice(450); b7.setPublishDate(LocalDate.parse("2022-11-28")); b7.setPublisher(p1);
+                bookRepository.save(b7);
+
+                Book b8 = new Book();
+                b8.setTitle("雲端架構設計與實務"); b8.setAuthor("林阿呆"); b8.setPrice(780); b8.setPublishDate(LocalDate.parse("2024-01-10")); b8.setPublisher(p2);
+                bookRepository.save(b8);
+
+                Book b9 = new Book();
+                b9.setTitle("SQL 效能調校聖經"); b9.setAuthor("張三"); b9.setPrice(600); b9.setPublishDate(LocalDate.parse("2019-07-22")); b9.setPublisher(p1);
+                bookRepository.save(b9);
+
+                Book b10 = new Book();
+                b10.setTitle("演算法圖鑑"); b10.setAuthor("Aditya Bhargava"); b10.setPrice(480); b10.setPublishDate(LocalDate.parse("2018-04-15")); b10.setPublisher(p2);
+                bookRepository.save(b10);
             }
         };
     }
