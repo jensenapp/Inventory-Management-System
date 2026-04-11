@@ -112,7 +112,7 @@ private final PublisherRepository publisherRepository;
         Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
 
         // 3. 呼叫 Repository 進行模糊搜尋與分頁
-        Page<Book> bookPage = bookRepository.findByTitleOrAuthor(searchTerm, pageable);
+        Page<Book> bookPage = bookRepository.findByTitleContainingIgnoreCaseOrAuthorContainingIgnoreCase(searchTerm,searchTerm, pageable);
 
         // 4. 將 Entity 轉成 DTO
         List<BookDto> content = bookPage.getContent().stream()

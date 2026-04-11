@@ -44,9 +44,7 @@ import java.util.stream.Collectors;
 public class AuthController {
 
     private final JwtUtils jwtUtils;
-    private final UserRepository userRepository;
-    private final RoleRepository roleRepository;
-    private final PasswordEncoder encoder;
+
     private final IUserService userService; // 注意：這裡要注入介面，而不是實作類別
     private final AuthenticationManager authenticationManager;
 
@@ -83,28 +81,12 @@ public class AuthController {
     @PostMapping("/public/signup")
     @Operation(summary = "註冊新使用者")
     public ResponseEntity<MessageResponse> registerUser(@Valid @RequestBody SignupRequest signUpRequest) {
-        if (userRepository.existsByUsername(signUpRequest.getUsername())) {
-            return ResponseEntity.badRequest().body(new MessageResponse("Error: Username is already taken!"));
-        }
-
-        if (userRepository.existsByEmail(signUpRequest.getEmail())) {
-            return ResponseEntity.badRequest().body(new MessageResponse("Error: Email is already in use!"));
-        }
-
-        User user = new User(
+        userService.registerUser(
                 signUpRequest.getUsername(),
                 signUpRequest.getEmail(),
-                encoder.encode(signUpRequest.getPassword()),
+                signUpRequest.getPassword(),
                 signUpRequest.getRealName()
         );
-
-        // 預設將新註冊的帳號指派為 ROLE_USER
-        Role role = roleRepository.findByRoleName(AppRole.ROLE_USER)
-                .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
-
-        user.setRole(role);
-        userRepository.save(user);
-
         return ResponseEntity.ok(new MessageResponse("User registered successfully!"));
     }
 

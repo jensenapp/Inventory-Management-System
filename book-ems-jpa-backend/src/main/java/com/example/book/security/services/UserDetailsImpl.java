@@ -1,6 +1,7 @@
 // file: src/main/java/com/example/book/security/services/UserDetailsImpl.java
 package com.example.book.security.services;
 
+import com.example.book.entity.AppRole;
 import com.example.book.entity.User;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
@@ -22,35 +23,50 @@ public class UserDetailsImpl implements UserDetails {
     @JsonIgnore
     private String password;
 
+    private boolean accountNonLocked = true;
+    private boolean accountNonExpired = true;
+    private boolean credentialsNonExpired = true;
+    private boolean enabled = true;
+
     private Collection<? extends GrantedAuthority> authorities;
 
-    public UserDetailsImpl(Long id, String username, String password, Collection<? extends GrantedAuthority> authorities) {
+    public UserDetailsImpl(Long id, String username, String password, boolean accountNonLocked, boolean accountNonExpired, boolean credentialsNonExpired, boolean enabled, Collection<? extends GrantedAuthority> authorities) {
         this.id = id;
         this.username = username;
         this.password = password;
+        this.accountNonLocked = accountNonLocked;
+        this.accountNonExpired = accountNonExpired;
+        this.credentialsNonExpired = credentialsNonExpired;
+        this.enabled = enabled;
         this.authorities = authorities;
     }
 
     public static UserDetailsImpl build(User user) {
         // 多對一寫法：直接取得 Role 並轉換
-        GrantedAuthority authority = new SimpleGrantedAuthority(user.getRole().getRoleName().name());
+        AppRole roleName = user.getRole().getRoleName();
+        GrantedAuthority authority = new SimpleGrantedAuthority(roleName.name());
 
         return new UserDetailsImpl(
                 user.getUserId(),
                 user.getUsername(),
                 user.getPassword(),
+                user.isAccountNonLocked(),
+                user.isAccountNonExpired(),
+                user.isCredentialsNonExpired(),
+                user.isEnabled(),
                 List.of(authority)
         );
     }
 
     @Override public Collection<? extends GrantedAuthority> getAuthorities() { return authorities; }
+
     public Long getId() { return id; }
     @Override public String getPassword() { return password; }
     @Override public String getUsername() { return username; }
-    @Override public boolean isAccountNonExpired() { return true; }
-    @Override public boolean isAccountNonLocked() { return true; }
-    @Override public boolean isCredentialsNonExpired() { return true; }
-    @Override public boolean isEnabled() { return true; }
+    @Override public boolean isAccountNonExpired() { return this.accountNonExpired; }
+    @Override public boolean isAccountNonLocked() { return this.accountNonLocked; }
+    @Override public boolean isCredentialsNonExpired() { return this.credentialsNonExpired; }
+    @Override public boolean isEnabled() { return this.enabled; }
 
     @Override
     public boolean equals(Object o) {

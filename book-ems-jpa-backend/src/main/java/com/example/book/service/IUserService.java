@@ -10,4 +10,5 @@ public interface IUserService {
     List<User> getAllUsers();
     UserDTO getUserById(Long id);
     User findByUsername(String username);
+    void registerUser(String username, String email, String password, String realName);
 }

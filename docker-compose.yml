@@ -29,6 +29,7 @@ services:
       - SPRING_DATASOURCE_URL=jdbc:mysql://db:3306/book_ems_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&useUnicode=true&characterEncoding=UTF-8
       - SPRING_DATASOURCE_USERNAME=ems_user
       - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD:-emspassword}
+      - SPRING_PROFILES_ACTIVE=prod
     ports:
       # 伺服器的 8081 對應到容器的 8080
       - "8081:8080"

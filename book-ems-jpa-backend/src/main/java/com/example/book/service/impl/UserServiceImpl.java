@@ -9,6 +9,7 @@ import com.example.book.repository.RoleRepository;
 import com.example.book.repository.UserRepository;
 import com.example.book.service.IUserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -19,6 +20,7 @@ public class UserServiceImpl implements IUserService { // 修正：實作 IUserS
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
+    private final PasswordEncoder encoder;
 
     @Override
     public void updateUserRole(Long userId, String roleName) {
@@ -50,6 +52,26 @@ public class UserServiceImpl implements IUserService { // 修正：實作 IUserS
         return userRepository.findByUsername(username)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "username", username));
     }
+
+
+    @Override
+    public void registerUser(String username, String email, String password, String realName) {
+        if (userRepository.existsByUsername(username)) {
+            throw new RuntimeException("Error: Username is already taken!");
+        }
+        if (userRepository.existsByEmail(email)) {
+            throw new RuntimeException("Error: Email is already in use!");
+        }
+
+        User user = new User(username, email, encoder.encode(password), realName);
+
+        Role role = roleRepository.findByRoleName(AppRole.ROLE_USER)
+                .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
+
+        user.setRole(role);
+        userRepository.save(user);
+    }
+
 
     private UserDTO convertToDto(User user) {
         return new UserDTO(
