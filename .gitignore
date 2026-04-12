@@ -1,0 +1,5 @@
+# Ignore SSH keys
+*-key
+*-key.pub
+github-actions-key
+github-actions-key.pub
