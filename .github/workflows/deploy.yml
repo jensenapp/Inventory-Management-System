@@ -12,10 +12,17 @@ jobs:
     steps:
       - name: 執行 SSH 連線與部署指令
         uses: appleboy/ssh-action@v1.0.3
+        # 1. 將 GitHub Secrets 宣告為此步驟的環境變數 (這是防呆關鍵)
+        env:
+          SECRET_DB_ROOT: ${{ secrets.DB_ROOT_PASSWORD }}
+          SECRET_DB_PASS: ${{ secrets.DB_PASSWORD }}
+          SECRET_JWT: ${{ secrets.JWT_SECRET }}
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USERNAME }}
           key: ${{ secrets.VPS_SSH_KEY }}
+          # 2. 告訴 Action 把這三個變數安全地帶進 VPS
+          envs: SECRET_DB_ROOT,SECRET_DB_PASS,SECRET_JWT
           script: |
             # 1. 進入伺服器上的部署目錄
             cd ~/book-ems-deploy
@@ -29,16 +36,16 @@ jobs:
               git pull origin main
             fi
 
-            # 3. 動態生成 .env 檔案 (將 GitHub Secrets 寫入檔案)
-            # 注意：第一行用單一個 > (覆蓋新建)，後面用 >> (附加到下一行)
+            # 3. 動態生成 .env 檔案
+            # 改用 $SECRET_XXX，並且加上雙引號 \" 包住，確保安全寫入
             echo "正在建立環境變數設定檔..."
-            echo "DB_ROOT_PASSWORD=${{ secrets.DB_ROOT_PASSWORD }}" > .env
-            echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
-            echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> .env
+            echo "DB_ROOT_PASSWORD=\"$SECRET_DB_ROOT\"" > .env
+            echo "DB_PASSWORD=\"$SECRET_DB_PASS\"" >> .env
+            echo "JWT_SECRET=\"$SECRET_JWT\"" >> .env
 
-            # 4. 停止舊容器並強制重新編譯、啟動新容器 (-d 背景執行, --build 強制重新打包鏡像)
+            # 4. 停止舊容器並強制重新編譯、啟動新容器
             docker compose down
             docker compose up -d --build
 
-            # 5. 清理部署過程中產生的無用（懸空）鏡像，避免伺服器硬碟爆滿
+            # 5. 清理無用鏡像
             docker image prune -f
