@@ -10,7 +10,7 @@ export default function ProtectedRoute({children,allowedRoles}) {
 
 
  if(!isAuthenticated){
- <Navigate to="/login" replace/>
+ return <Navigate to="/login" replace/>
 }
 
 if(allowedRoles && allowedRoles.length>0){

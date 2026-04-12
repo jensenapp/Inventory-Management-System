@@ -3,3 +3,7 @@
 *-key.pub
 github-actions-key
 github-actions-key.pub
+
+# Ignore Environment Variables
+.env
+*.env

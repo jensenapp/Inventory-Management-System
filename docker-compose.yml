@@ -6,10 +6,10 @@ services:
     container_name: book-ems-db
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootpassword}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
       MYSQL_DATABASE: book_ems_db
       MYSQL_USER: ems_user
-      MYSQL_PASSWORD: ${DB_PASSWORD:-emspassword}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
     ports:
       # 綁定在 127.0.0.1 確保不對外暴露，僅供本地/NPM使用
       - "127.0.0.1:3307:3306"
@@ -28,7 +28,8 @@ services:
     environment:
       - SPRING_DATASOURCE_URL=jdbc:mysql://db:3306/book_ems_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&useUnicode=true&characterEncoding=UTF-8
       - SPRING_DATASOURCE_USERNAME=ems_user
-      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD:-emspassword}
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
+      - JWT_SECRET=${JWT_SECRET}
       - SPRING_PROFILES_ACTIVE=prod
     ports:
       # 伺服器的 8081 對應到容器的 8080
