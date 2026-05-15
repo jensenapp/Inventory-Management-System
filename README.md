@@ -1,325 +1,552 @@
-----
+# Book EMS — 書本庫存管理系統
 
-#  Book EMS — 書本庫存管理系統
+Book EMS 是一個前後端分離的書籍庫存管理系統，使用 **Spring Boot 3、Spring Security、Spring Data JPA、MySQL、React 18** 建立，並透過 **Docker Compose** 部署至 VPS。
 
-這是一個基於 **前後端分離架構 (Frontend-Backend Separation)** 開發的全端書本與庫存管理系統。旨在提供企業級的權限管控、流暢的資料操作體驗，並透過 Docker Compose 與 GitHub Actions 實現一鍵容器化部署與 CI/CD 自動流水線。
+本專案支援使用者註冊、JWT 登入驗證、角色權限控管、書籍 CRUD、關鍵字搜尋、分頁排序、Swagger API 文件，以及 GitHub Actions 自動化部署流程。後端採用 DTO / Mapper 分層設計，並使用 `@EntityGraph` 優化 Book 與 Publisher 關聯查詢時可能產生的 N+1 問題。
 
-> ** 線上體驗 (Live Demo):** [https://ems.jensen-store.online/books](https://ems.jensen-store.online/books)
->
-> | 角色 | 帳號 | 密碼 | 權限 |
-> |------|------|------|------|
-> | 管理員 | `admin` | `adminPass` | 新增 / 修改 / 刪除 / 瀏覽 |
-> | 一般使用者 | `user1` | `password1` | 僅限瀏覽 |
+---
 
------
+## 線上 Demo
 
-##  目錄
+- **前端網站**：https://ems.jensen-store.online/books
+- **API 文件**：https://ems-api.jensen-store.online/swagger-ui/index.html
+- **GitHub Repository**：https://github.com/jensenapp/Inventory-Management-System
 
-- [核心功能](https://www.google.com/search?q=%23%E6%A0%B8%E5%BF%83%E5%8A%9F%E8%83%BD)
-- [技術棧](https://www.google.com/search?q=%23%E6%8A%80%E8%A1%93%E6%A3%A7)
-- [系統架構圖](https://www.google.com/search?q=%23%E7%B3%BB%E7%B5%B1%E6%9E%B6%E6%A7%8B%E5%9C%96)
-- [工程亮點（面試重點）](https://www.google.com/search?q=%23%E5%B7%A5%E7%A8%8B%E4%BA%AE%E9%BB%9E%E9%9D%A2%E8%A9%A6%E9%87%8D%E9%BB%9E)
-- [DevOps 與 CI/CD 流程](https://www.google.com/search?q=%23devops-%E8%88%87-cicd-%E6%B5%81%E7%A8%8B)
-- [本機運行指南](https://www.google.com/search?q=%23%E6%9C%AC%E6%A9%9F%E9%81%8B%E8%A1%8C%E6%8C%87%E5%8D%97)
-- [API 文件](https://www.google.com/search?q=%23api-%E6%96%87%E4%BB%B6)
-- [專案結構](https://www.google.com/search?q=%23%E5%B0%88%E6%A1%88%E7%B5%90%E6%A7%8B)
-- [環境變數說明](https://www.google.com/search?q=%23%E7%92%B0%E5%A2%83%E8%AE%8A%E6%95%B8%E8%AA%AA%E6%98%8E)
+### Demo 測試帳號
 
------
+| 角色 | 帳號 | 密碼 | 權限 |
+|---|---|---|---|
+| 管理員 | `admin` | `adminPass` | 新增、修改、刪除、瀏覽、搜尋書籍 |
+| 一般使用者 | `user1` | `password1` | 瀏覽與搜尋書籍 |
+
+> Demo 環境僅供作品展示與測試使用，資料可能會因重新部署或資料庫重建而重置。
+
+---
+
+## 目錄
+
+- [核心功能](#核心功能)
+- [技術棧](#技術棧)
+- [系統架構](#系統架構)
+- [工程亮點](#工程亮點)
+- [DevOps 與自動化部署](#devops-與自動化部署)
+- [本機啟動](#本機啟動)
+- [API 文件](#api-文件)
+- [專案結構](#專案結構)
+- [環境變數](#環境變數)
+- [學習重點](#學習重點)
+
+---
 
 ## 核心功能
 
-### 安全與身分驗證 (Security & Auth)
+### 使用者認證與權限控管
 
-- 基於 **Spring Security + JWT (JSON Web Token)** 實作**無狀態 (Stateless)** 身分驗證。
-- **RBAC 角色權限控制**：嚴格區分 `ROLE_ADMIN` 與 `ROLE_USER` 雙層防護。
-    - **前端**：按鈕與路由依角色隱藏（實作 `ProtectedRoute` 守衛）。
-    - **後端**：API 層以 `@PreAuthorize("hasRole('ADMIN')")` 再次驗證，防止惡意繞過前端。
-- 使用者註冊與登入，密碼以 BCrypt 加密儲存，保障資訊安全。
+- 使用 **Spring Security + JWT** 實作無狀態登入驗證。
+- 支援使用者註冊與登入。
+- 密碼以 **BCrypt** 加密後儲存。
+- 使用 `ROLE_ADMIN` 與 `ROLE_USER` 區分操作權限。
+- 前端透過 `ProtectedRoute` 控制頁面存取。
+- 後端透過 `@PreAuthorize("hasRole('ADMIN')")` 保護新增、修改、刪除 API，避免只依賴前端限制。
 
-### 書本管理 (Book Management)
+### 書籍管理
 
-- 完整的書本 CRUD（新增、查詢、修改、刪除）功能。
-- 與出版社 (Publisher) 實體形成 **多對一 (Many-to-One)** 關聯。
+- 管理員可新增、編輯、刪除書籍。
+- 一般使用者可瀏覽書籍列表與搜尋資料。
+- 書籍與出版社採用 `ManyToOne` 關聯設計。
+- 使用 DTO / Mapper 分離 Entity 與 API 回應格式。
 
-### 效能最佳化：分頁、排序與搜尋
+### 分頁、排序與搜尋
 
-- **伺服器端分頁 (Server-side Pagination)**：搭配 Spring Data `Pageable`，避免一次性載入大量資料，降低傳輸負擔。
-- **動態排序**：支援自訂排序欄位與方向。
-- **Debounce 防抖模糊搜尋**：前端 500ms 延遲後才發出 API 請求，對書名與作者進行全文搜尋，減少不必要的後端負載。
+- 使用 Spring Data `Pageable` 實作伺服器端分頁。
+- 支援依指定欄位與排序方向查詢資料。
+- 搜尋功能可依書名或作者進行模糊查詢。
+- 前端搜尋框使用 500ms debounce，減少高頻無效 API 請求。
 
-### 系統穩健性與防呆
+### 錯誤處理與資料驗證
 
-- 透過 `CommandLineRunner` 於系統啟動時**自動初始化**角色、預設帳號與測試資料（冪等性設計，重啟不重複建立）。
-- 完善的 **Global Exception Handling (全域例外處理)** (`@RestControllerAdvice`)，統一回傳結構化的錯誤 JSON。
-- 結合 `@Valid` 與 `ConstraintViolationException` 進行嚴謹的參數校驗。
+- 使用 `@RestControllerAdvice` 統一處理例外。
+- 使用 `@Valid`、`@NotBlank`、`@NotNull`、`@Min` 等註解進行資料驗證。
+- 自訂錯誤回應格式，讓前端能以一致方式處理錯誤訊息。
+- 使用 `CommandLineRunner` 初始化角色、預設帳號、出版社與測試書籍資料。
 
------
+---
 
 ## 技術棧
 
 | 類別 | 技術 |
-|------|------|
-| **後端語言** | Java 17 |
-| **後端框架** | Spring Boot 3.x |
-| **安全認證** | Spring Security + JWT (jjwt) |
-| **ORM** | Spring Data JPA / Hibernate |
-| **資料庫** | MySQL 8.0 |
-| **API 文件** | Springdoc OpenAPI (Swagger UI) |
-| **程式碼簡化** | Lombok |
-| **前端框架** | React 18 (Vite 建置) |
-| **前端路由** | React Router Dom v6 |
-| **全域狀態** | Context API + useReducer |
-| **HTTP 客戶端** | Axios (含 Interceptors) |
-| **UI 元件庫** | Bootstrap 5 |
-| **容器化** | Docker + Docker Compose (Multi-stage Build) |
-| **CI/CD** | GitHub Actions |
-| **反向代理** | Nginx (前端容器) + Nginx Proxy Manager (伺服器端) |
+|---|---|
+| 後端語言 | Java 17 |
+| 後端框架 | Spring Boot 3 |
+| 安全認證 | Spring Security、JWT、BCrypt |
+| ORM / 資料存取 | Spring Data JPA、Hibernate |
+| 資料庫 | MySQL 8 |
+| API 文件 | Springdoc OpenAPI、Swagger UI |
+| 前端框架 | React 18、Vite |
+| 前端路由 | React Router |
+| 前端狀態管理 | Context API、useReducer、localStorage |
+| HTTP Client | Axios、Interceptors |
+| UI | Bootstrap 5 |
+| 容器化 | Docker、Docker Compose、Multi-stage Build |
+| CI/CD | GitHub Actions |
+| 反向代理 | Nginx、Nginx Proxy Manager |
+| 開發工具 | Maven、Git、Postman |
 
------
+---
 
-## 系統架構圖
+## 系統架構
 
 ```text
 使用者瀏覽器
      │
      ▼
-[Nginx Proxy Manager]  ← SSL 憑證 / 反向代理
+Nginx Proxy Manager
+SSL 憑證 / HTTPS / 反向代理
      │
-     ├─────────────────────────────────┐
-     ▼                                 ▼
-[React 前端容器 :8085]         [Spring Boot 後端容器 :8081]
- (Nginx 靜態伺服器)                     │
-                                        ▼
-                               [MySQL 資料庫容器 :3307]
-                               (僅綁定 127.0.0.1，不對外暴露)
+     ├───────────────────────────────┐
+     ▼                               ▼
+React Frontend Container             Spring Boot Backend Container
+Nginx Static Server                   RESTful API
+Port: 8085                            Port: 8081
+                                     │
+                                     ▼
+                              MySQL Container
+                              Port: 127.0.0.1:3307 → 3306
 
-所有容器共享同一個 Docker Bridge Network: ems-network
+Docker Network: ems-network
 ```
 
------
+### 架構說明
+
+- 前端使用 React + Vite 建置，正式環境由 Nginx 容器提供靜態資源。
+- 後端使用 Spring Boot 提供 RESTful API。
+- MySQL 使用 Docker volume 保存資料。
+- MySQL 對外 port 綁定於 `127.0.0.1`，避免資料庫直接暴露在公開網路。
+- Nginx Proxy Manager 負責 HTTPS、SSL 憑證與反向代理。
+
+---
 
 ## 工程亮點
 
-### 1\. 解決 ORM 常見的 N+1 查詢問題
+### 1. 使用 `@EntityGraph` 降低 N+1 查詢問題
 
-查詢書本列表需一併顯示出版社名稱，若使用預設懶加載 (Lazy Loading)，Hibernate 會產生 **N+1 次 SQL**。
-**解決方案：** 在 `BookRepository` 中使用 `@EntityGraph`，強制底層以 **LEFT OUTER JOIN** 的方式一次性抓取所需資料，且此方式**完美相容於 Spring Data 的 `Pageable` 分頁機制**（這是 `JOIN FETCH` 寫法的已知限制）。
+書籍列表需要顯示出版社名稱，如果直接使用 Lazy Loading，查詢多筆書籍時可能發生 N+1 查詢問題。
+
+本專案在 Repository 層使用 `@EntityGraph(attributePaths = {"publisher"})`，讓查詢書籍時一併載入 Publisher 資料，降低多次查詢造成的資料庫負擔，並保留 Spring Data `Pageable` 分頁能力。
 
 ```java
-// BookRepository.java
 @EntityGraph(attributePaths = {"publisher"})
 @Query("SELECT b FROM Book b")
 Page<Book> findAllWithPublisher(Pageable pageable);
+
+@EntityGraph(attributePaths = {"publisher"})
+Page<Book> findByTitleContainingIgnoreCaseOrAuthorContainingIgnoreCase(
+    String title,
+    String author,
+    Pageable pageable
+);
 ```
 
-### 2\. 前端 Axios Interceptors 攔截器設計
+---
 
-為了提升 UX 與安全性，實作了統一的 API 請求/回應攔截器：
+### 2. Axios Interceptors 統一處理 Token 與 401
 
-- **Request 攔截：** 自動從 `localStorage` 提取 JWT Token 並注入 `Authorization` Header，避免每次發送 API 都要手動帶入。
-- **Response 攔截：** 全域捕捉 HTTP `401 Unauthorized` 錯誤。一旦 Token 過期或無效，自動清除本機狀態並強制將使用者導向登入頁面。
-
-<!-- end list -->
+前端建立共用的 Axios instance，集中處理 API base URL、JWT Token 注入與未授權回應。
 
 ```javascript
-// apiClient.js
+const apiClient = axios.create({
+  baseURL: import.meta.env.VITE_API_BASE_URL,
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
+
 apiClient.interceptors.request.use((config) => {
   const token = localStorage.getItem("jwtToken");
-  if (token) config.headers.Authorization = `Bearer ${token}`;
+
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+
   return config;
 });
 
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    if (error.response && error.response.status === 401) {
       localStorage.removeItem("jwtToken");
+      localStorage.removeItem("user");
       window.location.href = "/login";
     }
+
     return Promise.reject(error);
   }
 );
 ```
 
-### 3\. 架構分層與 DTO (Data Transfer Object) 模式
+此設計避免每個 API 呼叫重複撰寫 token header，也能在 token 過期或無效時統一導回登入頁。
 
-後端嚴格遵守 **Controller → Service Interface → ServiceImpl → Repository** 的分層架構：
+---
 
-- **面向介面程式設計**：降低耦合，符合 SOLID 原則。
-- **DTO + Mapper 模式**：避免將底層的 JPA Entity 直接暴露給前端，保護資料庫結構細節。
-- **Java Record 輕量 DTO**：使用 Java 14+ `record` 建立不可變的回應物件（如 `LoginResponse`），大幅減少樣板代碼。
+### 3. DTO / Mapper 分離 Entity 與 API 回應
 
-### 4\. 前後端環境變數完整分離 (Dev vs Prod)
+後端不直接將 JPA Entity 回傳給前端，而是透過 DTO 控制 API 回應格式。
 
-- **後端**：透過 `spring.profiles.active` 區分 `application-dev.properties` (連線至本機 localhost) 與 `application-prod.properties` (連線至 Docker 內部 network 的 db 容器)。
-- **前端**：透過 Vite 的 `.env.development` 與 `.env.production`，讓前端在開發時打向 localhost，而在 `npm run build` 打包時自動將正式機 API 網址燒錄至靜態檔中。
+```java
+public class BookDto {
+    private Long bookId;
+    private String title;
+    private String author;
+    private Integer price;
+    private LocalDate publishDate;
+    private Long publisherId;
+    private String publisherName;
+}
+```
 
-### 5\. 前端 Auth State 持久化設計
+此設計能降低資料表結構直接暴露給前端的風險，也讓 API 格式更穩定。
 
-使用 **Context API + useReducer** 管理全域登入狀態，並搭配 `useEffect` 與 `localStorage` 實現**頁面重整後的登入狀態恢復**，無需依賴 Redux 等龐大外部函式庫即可達成同等效果。
+---
 
------
+### 4. 分層架構設計
+
+後端採用常見的 Spring Boot 分層架構：
+
+```text
+Controller
+   ↓
+Service Interface
+   ↓
+Service Implementation
+   ↓
+Repository
+   ↓
+Database
+```
+
+各層職責如下：
+
+| 層級 | 職責 |
+|---|---|
+| Controller | 接收 HTTP 請求、處理 Request / Response |
+| Service | 撰寫商業邏輯與交易流程 |
+| Repository | 負責資料庫存取 |
+| DTO / Mapper | 控制 API 資料格式，轉換 Entity 與 DTO |
+| Exception Handler | 統一處理錯誤回應 |
+
+---
+
+### 5. 前端登入狀態持久化
+
+前端使用 `Context API + useReducer` 管理登入狀態，並將 JWT 與使用者資訊保存至 `localStorage`。當使用者重新整理頁面時，系統會從 localStorage 還原登入狀態。
+
+```text
+登入成功
+   ↓
+AuthContext 更新狀態
+   ↓
+localStorage 保存 jwtToken 與 user
+   ↓
+Axios interceptor 自動帶入 Bearer Token
+   ↓
+API 回傳 401 時清除登入狀態並導回登入頁
+```
+
+---
+
+### 6. 開發與正式環境分離
+
+後端使用 Spring Profiles 區分開發與正式環境：
+
+- `application-dev.properties`：連線本機 MySQL。
+- `application-prod.properties`：連線 Docker network 內的 MySQL container。
+
+前端使用 Vite 環境變數區分 API 位置：
+
+- `.env.development`：本機 API。
+- `.env.production`：正式環境 API。
+
+---
 
 ## DevOps 與自動化部署
 
-為確保開發與正式環境的高度一致性，並降低手動部署的錯誤率，本專案導入了基礎的 DevOps 實踐：
+本專案使用 Docker Compose 編排前端、後端與 MySQL，並透過 GitHub Actions 自動部署至個人 VPS。
 
-### 初探容器化與 Multi-stage Build
+### Docker Compose 服務
 
-前後端各自撰寫 `Dockerfile`，實踐多階段建置 (Multi-stage Builds)，有效縮減最終 Image 體積：
+| Service | 說明 |
+|---|---|
+| `db` | MySQL 8 資料庫 |
+| `backend` | Spring Boot REST API |
+| `frontend` | React build 後由 Nginx 提供靜態檔案 |
 
-- **後端**：Stage 1 以 Maven 編譯 `.jar`；Stage 2 僅複製 `.jar` 至 `eclipse-temurin:17-jre-alpine` 輕量映像執行。
-- **前端**：Stage 1 以 Node 環境執行 `npm run build`；Stage 2 以 Nginx 提供靜態資源服務。
+### Multi-stage Build
 
-### 實踐持續整合與交付 (GitHub Actions CI/CD)
+前端與後端皆使用 Multi-stage Build：
 
-整合 GitHub Actions 建立自動化流水線。當程式碼推送到 `main` 分支時，會自動觸發遠端部署流程：
+- 前端：Node build 階段產生靜態檔，再交由 Nginx serve。
+- 後端：Maven build 階段產生 jar，再使用 JRE image 執行。
+
+### GitHub Actions 部署流程
 
 ```text
-開發者 git push → main 分支
-        │
-        ▼
- GitHub Actions 觸發
-        │
-        ▼
- SSH 連線至 VPS 伺服器
-        │
-        ├── git pull (更新最新程式碼)
-        ├── 動態寫入 .env 環境變數 (從 GitHub Secrets 注入)
-        ├── docker compose down
-        ├── docker compose up -d --build (重新建置並啟動)
-        └── docker image prune -f (清理舊 Image，釋放空間)
+git push main
+     │
+     ▼
+GitHub Actions 觸發 deploy job
+     │
+     ▼
+透過 SSH 連線 VPS
+     │
+     ├── 首次部署：git clone repository
+     ├── 更新部署：git pull origin main
+     ├── 由 GitHub Secrets 產生 .env
+     ├── docker compose down
+     ├── docker compose up -d --build
+     └── docker image prune -f
 ```
 
-### 資安加固
+### 部署安全性
 
-- 資料庫對外 Port 限制綁定於伺服器本機端 (`127.0.0.1:3307:3306`)，阻絕外部惡意掃描。
-- 敏感資訊（DB 密碼、JWT 金鑰）全以 GitHub Secrets + Docker Compose 環境變數注入，不提交至版本控制。
-- Nginx Proxy Manager 統一處理 SSL 憑證與 HTTPS 終止。
+- DB 密碼與 JWT secret 不寫入程式碼。
+- 正式環境敏感資訊由 GitHub Secrets 注入。
+- MySQL port 僅綁定 VPS 本機端，不直接對外公開。
+- HTTPS 與 SSL 憑證由 Nginx Proxy Manager 管理。
 
------
+---
 
-## 本機運行指南 (Local Development Setup)
+## 本機啟動
 
 ### 前置需求
 
-- 電腦已安裝 **Docker Engine** & **Docker Compose**
+請先安裝：
 
-### 啟動步驟
+- Docker
+- Docker Compose
+- Git
+
+### Clone 專案
 
 ```bash
-# 1. Clone 專案
-git clone https://github.com/your-account/book-ems.git
-cd book-ems
+git clone https://github.com/jensenapp/Inventory-Management-System.git
+cd Inventory-Management-System
+```
 
-# 2. 建立本機環境變數檔（可自行修改密碼）
+### 建立 `.env`
+
+在專案根目錄建立 `.env`：
+
+```bash
 cat <<EOF > .env
 DB_ROOT_PASSWORD=rootpassword
 DB_PASSWORD=emspassword
-JWT_SECRET=ThisIsALocalDevelopmentSecretKeyThatIsLongEnough
+JWT_SECRET=VGhpc0lzQUxvY2FsRGV2ZWxvcG1lbnRTZWNyZXRLZXlUaGF0SXNMb25nRW5vdWdo
 EOF
+```
 
-# 3. 一鍵啟動（MySQL + Spring Boot + React）
+> `JWT_SECRET` 建議使用 Base64 編碼且長度足夠的金鑰。正式環境請勿使用上方範例值。
+
+### 啟動服務
+
+```bash
 docker compose up -d --build
+```
 
-# 4. 查看啟動狀態
+### 查看容器狀態
+
+```bash
 docker compose ps
 ```
 
-### 服務端點
+### 本機服務端點
 
 | 服務 | URL |
-|------|-----|
-| 前端 (React) | [http://localhost:8085](https://www.google.com/search?q=http://localhost:8085) |
-| 後端 API | [http://localhost:8081/api/books](https://www.google.com/search?q=http://localhost:8081/api/books) |
-| Swagger UI | [http://localhost:8081/swagger-ui/index.html](https://www.google.com/search?q=http://localhost:8081/swagger-ui/index.html) |
+|---|---|
+| 前端 | http://localhost:8085 |
+| 後端 API | http://localhost:8081/api/books |
+| Swagger UI | http://localhost:8081/swagger-ui/index.html |
+| MySQL | 127.0.0.1:3307 |
 
 ### 關閉服務
 
 ```bash
 docker compose down
-# 若需清除資料庫 Volume (刪除所有資料)
+```
+
+如需刪除資料庫 volume：
+
+```bash
 docker compose down -v
 ```
 
------
+---
 
 ## API 文件
 
-啟動後端後，可透過自動生成的 Swagger UI 瀏覽與測試所有 API：
-**[http://localhost:8081/swagger-ui/index.html](https://www.google.com/search?q=http://localhost:8081/swagger-ui/index.html)**
-
-| Method | 路徑 | 說明 | 權限 |
-|--------|------|------|------|
-| `POST` | `/api/auth/public/signin` | 使用者登入，取得 JWT | 公開 |
-| `POST` | `/api/auth/public/signup` | 使用者註冊 | 公開 |
-| `GET` | `/api/books` | 取得書本列表（分頁） | 已登入 |
-| `GET` | `/api/books/search?text={keyword}`| 模糊搜尋（分頁） | 已登入 |
-| `POST` | `/api/books` | 新增書本 | ADMIN |
-| `PUT` | `/api/books/{id}` | 更新書本 | ADMIN |
-| `DELETE` | `/api/books/{id}` | 刪除書本 | ADMIN |
-
------
-
-## 專案結構 (Project Structure)
+啟動後端後，可透過 Swagger UI 查看與測試 API：
 
 ```text
-book-ems/
-├── .github/
-│   └── workflows/
-│       └── deploy.yml                  # GitHub Actions CI/CD 設定檔
-│
-├── book-ems-jpa-backend/               # Spring Boot 後端
-│   ├── Dockerfile
-│   └── src/main/java/com/example/book/
-│       ├── config/                     # Swagger 等全域設定
-│       ├── controller/                 # RESTful API 端點 (Auth, Book)
-│       ├── dto/                        # 資料傳輸物件
-│       ├── entity/                     # JPA 實體模型 (Book, Publisher, User, Role)
-│       ├── exception/                  # 全域例外處理 (@RestControllerAdvice)
-│       ├── mapper/                     # Entity ↔ DTO 轉換邏輯
-│       ├── repository/                 # 資料庫存取層 (含 @EntityGraph 最佳化)
-│       ├── security/                   # Spring Security & JWT 核心邏輯
-│       └── service/                    # 業務邏輯層 (Interface & Impl)
-│
-├── book-ems-jpa-frontend/              # React 前端
-│   ├── Dockerfile
-│   ├── nginx.conf                      # Nginx SPA 路由 Fallback 設定
-│   ├── .env.development                # 開發環境變數
-│   ├── .env.production                 # 正式環境變數
-│   └── src/
-│       ├── api/                        # Axios 實體與攔截器設定
-│       ├── components/                 # React UI 元件與受保護路由 (ProtectedRoute)
-│       ├── services/                   # 封裝所有的 API 呼叫邏輯
-│       ├── store/                      # Context API 狀態管理 (AuthContext)
-│       └── App.jsx                     # 應用程式路由設定
-│
-└── docker-compose.yml                  # 容器編排檔 (db / backend / frontend)
+http://localhost:8081/swagger-ui/index.html
 ```
 
------
+正式環境 API 文件：
 
-## 環境變數說明
+```text
+https://ems-api.jensen-store.online/swagger-ui/index.html
+```
 
-### Docker Compose `.env` 檔（本機使用）
+### 主要 API
+
+| Method | Endpoint | 說明 | 權限 |
+|---|---|---|---|
+| `POST` | `/api/auth/public/signin` | 使用者登入，取得 JWT | Public |
+| `POST` | `/api/auth/public/signup` | 使用者註冊 | Public |
+| `GET` | `/api/auth/user` | 取得目前登入使用者資訊 | Authenticated |
+| `GET` | `/api/books` | 取得書籍列表，支援分頁與排序 | Authenticated |
+| `GET` | `/api/books/{id}` | 取得單本書籍 | Authenticated |
+| `GET` | `/api/books/search?text={keyword}` | 依書名或作者搜尋書籍 | Authenticated |
+| `POST` | `/api/books` | 新增書籍 | ADMIN |
+| `PUT` | `/api/books/{id}` | 更新書籍 | ADMIN |
+| `DELETE` | `/api/books/{id}` | 刪除書籍 | ADMIN |
+
+### JWT 使用方式
+
+登入成功後會取得 `jwtToken`，後續請求需在 Header 帶入：
+
+```http
+Authorization: Bearer <jwtToken>
+```
+
+Swagger UI 可點選 **Authorize**，輸入 Bearer Token 後測試需要登入的 API。
+
+---
+
+## 專案結構
+
+```text
+Inventory-Management-System/
+├── .github/
+│   └── workflows/
+│       └── deploy.yml
+│
+├── book-ems-jpa-backend/
+│   ├── Dockerfile
+│   ├── pom.xml
+│   └── src/
+│       ├── main/
+│       │   ├── java/com/example/book/
+│       │   │   ├── config/
+│       │   │   ├── controller/
+│       │   │   ├── dto/
+│       │   │   ├── entity/
+│       │   │   ├── exception/
+│       │   │   ├── mapper/
+│       │   │   ├── repository/
+│       │   │   ├── security/
+│       │   │   └── service/
+│       │   └── resources/
+│       │       ├── application.properties
+│       │       ├── application-dev.properties
+│       │       └── application-prod.properties
+│       └── test/
+│
+├── book-ems-jpa-frontend/
+│   ├── Dockerfile
+│   ├── nginx.conf
+│   ├── package.json
+│   └── src/
+│       ├── api/
+│       ├── components/
+│       ├── services/
+│       ├── store/
+│       ├── App.jsx
+│       └── main.jsx
+│
+├── docker-compose.yml
+└── README.md
+```
+
+---
+
+## 環境變數
+
+### Docker Compose `.env`
 
 | 變數名稱 | 說明 |
-|----------|------|
-| `DB_ROOT_PASSWORD` | MySQL root 帳號密碼 |
-| `DB_PASSWORD` | 應用程式使用的 DB 帳號密碼 |
-| `JWT_SECRET` | JWT 簽名金鑰（Base64 編碼，建議長度大於 256 bits） |
+|---|---|
+| `DB_ROOT_PASSWORD` | MySQL root 密碼 |
+| `DB_PASSWORD` | 應用程式連線 MySQL 使用的密碼 |
+| `JWT_SECRET` | JWT 簽名金鑰，建議使用 Base64 編碼 |
 
-### GitHub Secrets（自動部署使用）
+### GitHub Secrets
 
-| Secret 名稱 | 說明 |
-|-------------|------|
-| `VPS_HOST` / `VPS_USERNAME` / `VPS_SSH_KEY` | 伺服器 IP、登入帳號、SSH 私鑰內容 |
-| `DB_ROOT_PASSWORD` / `DB_PASSWORD` | 遠端 MySQL 密碼 |
+| Secret | 說明 |
+|---|---|
+| `VPS_HOST` | VPS 主機位址 |
+| `VPS_USERNAME` | VPS SSH 使用者名稱 |
+| `VPS_SSH_KEY` | VPS SSH 私鑰 |
+| `DB_ROOT_PASSWORD` | 正式環境 MySQL root 密碼 |
+| `DB_PASSWORD` | 正式環境應用程式 DB 密碼 |
 | `JWT_SECRET` | 正式環境 JWT 簽名金鑰 |
 
------
+### `.gitignore` 建議
 
-## 關於作者
+請確認 `.env` 不要提交至 GitHub：
 
-本專案為全端開發能力的完整展示，涵蓋後端 API 系統設計、安全認證實作、前端狀態管理，以及 DevOps 容器化與 CI/CD 持續交付的實踐。歡迎透過 Issue 或 PR 提出建議與回饋！
+```gitignore
+.env
+*.env.local
+```
+
+可以另外提供 `.env.example` 作為範例：
+
+```env
+DB_ROOT_PASSWORD=your_root_password
+DB_PASSWORD=your_db_password
+JWT_SECRET=your_base64_jwt_secret
+```
+
+---
+
+## 學習重點
+
+透過本專案，實作並熟悉以下主題：
+
+- Spring Boot RESTful API 設計
+- Spring Security + JWT 無狀態登入驗證
+- 前後端分離架構下的 Token 傳遞與 401 處理
+- ROLE_ADMIN / ROLE_USER 權限控管
+- Spring Data JPA 分頁、排序與模糊搜尋
+- DTO / Mapper 分離 Entity 與 API 回應格式
+- 使用 `@EntityGraph` 降低 N+1 查詢問題
+- React Context + useReducer 全域狀態管理
+- Docker Compose 編排前端、後端與 MySQL
+- GitHub Actions 透過 SSH 自動部署至 VPS
+- Nginx Proxy Manager 管理 HTTPS 與反向代理
+
+---
+
+## 後續可改進方向
+
+- 補充 Service / Controller 層單元測試與整合測試。
+- 將出版社管理改為獨立 CRUD，而不是固定選項。
+- 增加書籍圖片上傳功能。
+- 增加審計欄位，例如建立時間、更新時間、建立者。
+- 增加資料庫備份與還原流程。
+- 增加健康檢查端點與基本監控。
+
+---
+
+## 關於本專案
+
+本專案作為 Java 後端與全端整合能力的作品集，重點展示：
+
+- 後端 API 設計
+- JWT 登入與角色權限
+- JPA 關聯查詢與分頁搜尋
+- React 前端整合
+- Docker 容器化部署
+- GitHub Actions 自動化部署
+
+
