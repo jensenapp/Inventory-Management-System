@@ -4,7 +4,19 @@
 > 本專案可作為 Java Backend / Full Stack Engineer 面試展示作品。
 
 ---
+## 線上展示
 
+- 線上 Demo：https://ems.jensen-store.online/books
+- API 文件：https://ems-api.jensen-store.online/swagger-ui/index.html
+
+## Demo 測試帳號
+
+| 角色 | 帳號 | 密碼 | 可操作功能 |
+|---|---|---|---|
+| 管理員 | admin | adminPass | 書籍新增、查詢、更新、刪除 |
+| 一般使用者 | user1 | password1 | 瀏覽書籍、搜尋書籍 |
+
+> 注意：此 Demo 僅作為面試與作品展示用途，資料可能會定期重置。
 ## 目錄
 
 - [專案簡介](#專案簡介)
