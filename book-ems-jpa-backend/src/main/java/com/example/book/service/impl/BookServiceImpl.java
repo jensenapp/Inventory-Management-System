@@ -89,7 +89,8 @@ private final PublisherRepository publisherRepository;
     public BookDto createBook(BookDto bookDto) {
         Book book = BookMapper.mapToBook(bookDto);
         if (bookDto.getPublisherId()!=null){
-            Publisher publisher = publisherRepository.findById(bookDto.getPublisherId()).orElseThrow(() -> new ResourceNotFoundException("Publisher","PublisherId",bookDto.getPublisherId().toString()));
+            Publisher publisher = publisherRepository.
+                    findById(bookDto.getPublisherId()).orElseThrow(() -> new ResourceNotFoundException("Publisher","PublisherId",bookDto.getPublisherId().toString()));
             book.setPublisher(publisher);
         }
         Book saveBook = bookRepository.save(book);
