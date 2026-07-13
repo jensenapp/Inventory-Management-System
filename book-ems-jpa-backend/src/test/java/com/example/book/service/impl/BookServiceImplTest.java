@@ -1,6 +1,7 @@
 package com.example.book.service.impl;
 
 import com.example.book.dto.BookDto;
+import com.example.book.dto.PageResponseDto;
 import com.example.book.entity.Book;
 import com.example.book.entity.Publisher;
 import com.example.book.exception.ResourceNotFoundException;
@@ -11,8 +12,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.stubbing.OngoingStubbing;
+import org.springframework.data.domain.*;
+import org.springframework.data.querydsl.QPageRequest;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -32,6 +37,143 @@ class BookServiceImplTest {
 
     @InjectMocks
     private BookServiceImpl bookService;
+
+    @Test
+    void getAllBooks_shouldReturnPagedBookDtos(){
+
+        //arrange
+        Book book1 = new Book();
+        book1.setBookId(1L);
+        book1.setTitle("ABC");
+        book1.setAuthor("tom");
+        book1.setPrice(1000);
+
+        Book book2 = new Book();
+        book2.setBookId(2L);
+        book2.setTitle("DEF");
+        book2.setAuthor("tim");
+        book2.setPrice(2000);
+
+        Pageable pageable = PageRequest.of(0, 3, Sort.by("bookId").ascending());
+
+        Page<Book> page=new PageImpl<>(List.of(book1,book2),pageable,2);
+
+        when(bookRepository.findAllWithPublisher(pageable)).thenReturn(page);
+
+        //act
+
+        PageResponseDto<BookDto> allBooks = bookService.getAllBooks(0, 3, "bookId", "asc");
+
+        //assert
+
+        assertThat(allBooks.getContent().get(0).getBookId()).isEqualTo(1L);
+        assertThat(allBooks.getContent().get(1).getAuthor()).isEqualTo("tim");
+        assertThat(allBooks.getPageNo()).isEqualTo(0);
+        assertThat(allBooks.getTotalPages()).isEqualTo(1);
+        assertThat(allBooks.getPageSize()).isEqualTo(3);
+        assertThat(allBooks.isLast()).isTrue();
+
+        verify(bookRepository).findAllWithPublisher(any(Pageable.class));
+
+    }
+
+    @Test
+    void updateBooks_whenPublisherNotFound_shouldThrowResourceNotFoundException(){
+        // arrange
+        BookDto newBookDto = new BookDto();
+        newBookDto.setTitle("海龜凱薩");
+        newBookDto.setAuthor("強強");
+        newBookDto.setPrice(1900);
+        newBookDto.setPublisherId(2L);
+        newBookDto.setPublishDate(LocalDate.of(2008,1,1));
+
+
+
+        Book existingBook = new Book();
+//        existingBook.setPublisher(publisher);
+        existingBook.setBookId(1L);
+        existingBook.setAuthor("小強");
+        existingBook.setTitle("海龜喜來登");
+        existingBook.setPrice(900);
+        existingBook.setPublishDate(LocalDate.of(2008,1,1));
+
+        when(bookRepository.findById(1L)).thenReturn(Optional.of(existingBook));
+        when(publisherRepository.findById(2L)).thenReturn(Optional.empty());
+
+        ResourceNotFoundException exception =
+                assertThrows(ResourceNotFoundException.class, () -> bookService.updateBooks(1L, newBookDto));
+
+        assertThat(exception.getMessage()).contains("Publisher not found").contains("2");
+
+        verify(bookRepository).findById(1L);
+        verify(publisherRepository).findById(2L);
+        verify(bookRepository,never()).save(existingBook);
+    }
+
+    @Test
+    void updateBooks_whenBookNotFound_shouldThrowResourceNotFoundException(){
+
+        //arrange
+        BookDto newBookDto = new BookDto();
+        newBookDto.setTitle("海龜凱薩");
+        newBookDto.setAuthor("強強");
+        newBookDto.setPrice(1900);
+        newBookDto.setPublisherId(2L);
+        newBookDto.setPublishDate(LocalDate.of(2008,1,1));
+
+        when(bookRepository.findById(99L)).thenReturn(Optional.empty());
+
+        //act
+        ResourceNotFoundException exception =
+                assertThrows(ResourceNotFoundException.class, () -> bookService.updateBooks(99L, newBookDto));
+
+        //assert
+        assertThat(exception.getMessage()).contains("Book not found").contains("99");
+
+        //verify
+        verify(bookRepository).findById(99L);
+        verify(publisherRepository,never()).findById(2L);
+        verify(bookRepository,never()).save(any(Book.class));
+    }
+
+    @Test
+    void updateBooks_whenBookExists_shouldUpdateAndReturnBookDto(){
+        // arrange
+        BookDto newBookDto = new BookDto();
+        newBookDto.setTitle("海龜凱薩");
+        newBookDto.setAuthor("強強");
+        newBookDto.setPrice(1900);
+        newBookDto.setPublisherId(2L);
+        newBookDto.setPublishDate(LocalDate.of(2008,01,01));
+
+        Publisher publisher = new Publisher();
+        publisher.setPublisherId(2L);
+        publisher.setPublisherName("大海書局");
+
+        Book existingBook = new Book();
+//        existingBook.setPublisher(publisher);
+        existingBook.setBookId(1L);
+        existingBook.setAuthor("小強");
+        existingBook.setTitle("海龜喜來登");
+        existingBook.setPrice(900);
+        existingBook.setPublishDate(LocalDate.of(2008,01,01));
+
+        when(bookRepository.findById(1L)).thenReturn(Optional.of(existingBook));
+
+        when(publisherRepository.findById(2L)).thenReturn(Optional.of(publisher));
+
+        when(bookRepository.save(existingBook)).thenReturn(existingBook);
+        //act
+
+        BookDto updateBooks = bookService.updateBooks(1L, newBookDto);
+
+        //assert
+
+        assertThat(updateBooks.getAuthor()).isEqualTo("強強");
+
+        verify(bookRepository).save(any(Book.class));
+
+    }
 
     @Test
     void getBookById_whenBookExists_shouldReturnBookDto() {
@@ -161,4 +303,5 @@ class BookServiceImplTest {
         verify(bookRepository,never()).save(any(Book.class));
 
     }
+
 }
