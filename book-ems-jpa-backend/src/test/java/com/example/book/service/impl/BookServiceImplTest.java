@@ -39,6 +39,49 @@ class BookServiceImplTest {
     private BookServiceImpl bookService;
 
     @Test
+    void searchBook_shouldReturnMatchedBooks(){
+        //arrange
+        Book book1 = new Book();
+        book1.setBookId(1L);
+        book1.setTitle("奇美");
+        book1.setAuthor("miss lee");
+        book1.setPrice(8000);
+
+        Book book2 = new Book();
+        book2.setBookId(2L);
+        book2.setTitle("聲寶");
+        book2.setAuthor("miss lisa");
+        book2.setPrice(9000);
+
+        Pageable pageable = PageRequest.of(0, 3, Sort.by("bookId").ascending());
+
+        Page<Book> page=new PageImpl<>(List.of(book1),pageable,1);
+
+        when(bookRepository.findByTitleContainingIgnoreCaseOrAuthorContainingIgnoreCase("奇美","奇美",pageable)).thenReturn(page);
+
+        //act
+        PageResponseDto<BookDto> searchBook =
+                bookService.searchBook("奇美",0,3,"bookId","asc");
+
+        //assert
+        assertThat(searchBook.getContent().get(0).getTitle()).isEqualTo("奇美");
+        assertThat(searchBook.isLast()).isTrue();
+        assertThat(searchBook.getTotalElements()).isEqualTo(1);
+        assertThat(searchBook.getTotalPages()).isEqualTo(1);
+        assertThat(searchBook.getPageSize()).isEqualTo(3);
+
+        //verify
+        verify(bookRepository).findByTitleContainingIgnoreCaseOrAuthorContainingIgnoreCase("奇美","奇美",pageable);
+
+    }
+
+    @Test
+    void deleteBook_shouldCallRepositoryDeleteById(){
+        bookRepository.deleteById(1L);
+        verify(bookRepository).deleteById(1L);
+    }
+
+    @Test
     void getAllBooks_shouldReturnPagedBookDtos(){
 
         //arrange
@@ -66,14 +109,18 @@ class BookServiceImplTest {
 
         //assert
 
-        assertThat(allBooks.getContent().get(0).getBookId()).isEqualTo(1L);
-        assertThat(allBooks.getContent().get(1).getAuthor()).isEqualTo("tim");
-        assertThat(allBooks.getPageNo()).isEqualTo(0);
+        assertThat(allBooks.getContent().get(0).getTitle()).isEqualTo("ABC");
+        assertThat(allBooks.getContent().get(1).getTitle()).isEqualTo("DEF");
+
+        assertThat(allBooks.getPageNo()).isZero();
         assertThat(allBooks.getTotalPages()).isEqualTo(1);
-        assertThat(allBooks.getPageSize()).isEqualTo(3);
-        assertThat(allBooks.isLast()).isTrue();
+        assertThat(allBooks.getTotalElements()).isEqualTo(2);
+
+        //verify
 
         verify(bookRepository).findAllWithPublisher(any(Pageable.class));
+
+
 
     }
 
