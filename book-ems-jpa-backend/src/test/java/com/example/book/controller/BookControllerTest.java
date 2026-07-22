@@ -2,6 +2,7 @@ package com.example.book.controller;
 
 import com.example.book.dto.BookDto;
 import com.example.book.exception.GlobalExceptionHandler;
+import com.example.book.exception.ResourceNotFoundException;
 import com.example.book.security.jwt.AuthTokenFilter;
 import com.example.book.service.IBookService;
 
@@ -40,6 +41,22 @@ class BookControllerTest {
     @MockitoBean
     private AuthTokenFilter authTokenFilter;
 
+    @Test
+    void getBookById_WhenBookNotFound_shouldReturn404() throws Exception {
+
+        //arrange
+        when(bookService.getBookById(99L)).thenThrow(new ResourceNotFoundException("Book","bookId","99"));
+
+        //act assert
+        mockMvc.perform(get("/api/books/99"))
+                .andExpect(status().isNotFound())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.errorCode").value("404 NOT_FOUND"))
+                .andExpect(jsonPath("$.errorMessage").value("Book not found with the given input data bookId: 99"));
+
+        //verify
+        verify(bookService).getBookById(99L);
+    }
 
     @Test
     void  getBookById_whenBookExists_shouldReturnBook() throws Exception {
