@@ -1,6 +1,7 @@
 package com.example.book.controller;
 
 import com.example.book.dto.BookDto;
+import com.example.book.dto.PageResponseDto;
 import com.example.book.exception.GlobalExceptionHandler;
 import com.example.book.exception.ResourceNotFoundException;
 import com.example.book.security.jwt.AuthTokenFilter;
@@ -17,6 +18,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import tools.jackson.databind.ObjectMapper;
 
 import java.time.LocalDate;
+import java.util.List;
 
 
 import static org.mockito.Mockito.verify;
@@ -40,6 +42,57 @@ class BookControllerTest {
 
     @MockitoBean
     private AuthTokenFilter authTokenFilter;
+
+
+    @Test
+    void getAllBooks_shouldReturnPagedBooks() throws Exception {
+
+        // arrange
+        BookDto book1 = new BookDto();
+        book1.setBookId(1L);
+        book1.setTitle("Java 深入淺出");
+        book1.setAuthor("Kathy Sierra");
+        book1.setPrice(850);
+
+        BookDto book2 = new BookDto();
+        book2.setBookId(2L);
+        book2.setTitle("Spring Boot 3 實戰開發");
+        book2.setAuthor("王大明");
+        book2.setPrice(650);
+
+        PageResponseDto<BookDto> pageResponse =
+                new PageResponseDto<>(
+                        List.of(book1, book2),
+                        0,
+                        5,
+                        2,
+                        1,
+                        true
+                );
+
+        when(bookService.getAllBooks(0, 5, "bookId", "desc"))
+                .thenReturn(pageResponse);
+
+        // act + assert
+        mockMvc.perform(get("/api/books"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content.length()").value(2))
+                .andExpect(jsonPath("$.content[0].bookId").value(1))
+                .andExpect(jsonPath("$.content[0].title").value("Java 深入淺出"))
+                .andExpect(jsonPath("$.content[1].bookId").value(2))
+                .andExpect(jsonPath("$.content[1].title")
+                        .value("Spring Boot 3 實戰開發"))
+                .andExpect(jsonPath("$.pageNo").value(0))
+                .andExpect(jsonPath("$.pageSize").value(5))
+                .andExpect(jsonPath("$.totalElements").value(2))
+                .andExpect(jsonPath("$.totalPages").value(1))
+                .andExpect(jsonPath("$.last").value(true));
+
+        // verify
+        verify(bookService)
+                .getAllBooks(0, 5, "bookId", "desc");
+    }
+
 
     @Test
     void getBookById_WhenBookNotFound_shouldReturn404() throws Exception {
