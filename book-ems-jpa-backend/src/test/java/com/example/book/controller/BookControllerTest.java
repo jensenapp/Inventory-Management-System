@@ -1,65 +1,78 @@
-//package com.example.book.controller;
-//
-//import com.example.book.dto.BookDto;
-//import com.example.book.service.IBookService;
-//import org.junit.jupiter.api.Test;
-//import org.springframework.beans.factory.annotation.Autowired;
-//import org.springframework.http.MediaType;
-//import org.springframework.security.test.context.support.WithMockUser;
-//import org.springframework.test.context.bean.override.mockito.MockitoBean;
-//import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-//import org.springframework.test.web.servlet.MockMvc;
-//
-//import static org.mockito.Mockito.when;
-//import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
-//import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-//import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-//import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-//import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-//
-//@WebMvcTest(BookController.class)
-//class BookControllerTest {
-//
-//    @Autowired
-//    private MockMvc mockMvc;
-//
-//    @MockitoBean
-//    private IBookService bookService;
-//
-//    @Test
-//    void getBookById_shouldReturnBook() throws Exception {
-//        BookDto dto = new BookDto();
-//        dto.setBookId(1L);
-//        dto.setTitle("Spring Boot 3 實戰開發");
-//        dto.setAuthor("王大明");
-//        dto.setPrice(650);
-//
-//        when(bookService.getBookById(1L)).thenReturn(dto);
-//
-//        mockMvc.perform(get("/api/books/1"))
-//                .andExpect(status().isOk())
-//                .andExpect(jsonPath("$.bookId").value(1))
-//                .andExpect(jsonPath("$.title").value("Spring Boot 3 實戰開發"))
-//                .andExpect(jsonPath("$.author").value("王大明"))
-//                .andExpect(jsonPath("$.price").value(650));
-//    }
-//
-//    @Test
-//    @WithMockUser(roles = "ADMIN")
-//    void createBook_whenPriceIsNegative_shouldReturnBadRequest() throws Exception {
-//        String requestBody = """
-//                {
-//                  "title": "測試書",
-//                  "author": "測試作者",
-//                  "price": -1
-//                }
-//                """;
-//
-//        mockMvc.perform(post("/api/books")
-//                        .with(csrf())
-//                        .contentType(MediaType.APPLICATION_JSON)
-//                        .content(requestBody))
-//                .andExpect(status().isBadRequest())
-//                .andExpect(jsonPath("$.price").value("價錢不得小於0"));
-//    }
-//}
+package com.example.book.controller;
+
+import com.example.book.dto.BookDto;
+import com.example.book.exception.GlobalExceptionHandler;
+import com.example.book.security.jwt.AuthTokenFilter;
+import com.example.book.service.IBookService;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.context.annotation.Import;
+import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MockMvc;
+import tools.jackson.databind.ObjectMapper;
+
+import java.time.LocalDate;
+
+
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+@WebMvcTest(BookController.class)
+@AutoConfigureMockMvc(addFilters = false)
+@Import(GlobalExceptionHandler.class)
+class BookControllerTest {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    @MockitoBean
+    private IBookService bookService;
+
+    @MockitoBean
+    private AuthTokenFilter authTokenFilter;
+
+
+    @Test
+    void  getBookById_whenBookExists_shouldReturnBook() throws Exception {
+        //arrange
+        BookDto bookDto = new BookDto();
+        bookDto.setBookId(1L);
+        bookDto.setTitle("Spring Boot 3 實戰開發");
+        bookDto.setAuthor("王大明");
+        bookDto.setPrice(650);
+        bookDto.setPublishDate(LocalDate.of(2019,1,1));
+        bookDto.setPublisherId(1L);
+        bookDto.setPublisherName("碁峰資訊");
+
+        //act assert
+
+        when(bookService.getBookById(1L)).thenReturn(bookDto);
+
+        mockMvc.perform(get("/api/books/1"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.bookId").value(1))
+                .andExpect(jsonPath("$.title").value("Spring Boot 3 實戰開發"))
+                .andExpect(jsonPath("$.author").value("王大明"))
+                .andExpect(jsonPath("$.price").value(650))
+                .andExpect(jsonPath("$.publishDate").value("2019-01-01"))
+                .andExpect(jsonPath("$.publisherId").value(1))
+                .andExpect(jsonPath("$.publisherName").value("碁峰資訊"));
+
+        //verify
+
+        verify(bookService).getBookById(1L);
+
+    }
+
+
+}
