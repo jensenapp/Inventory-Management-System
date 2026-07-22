@@ -39,9 +39,10 @@ public class BookController {
     }
 
     @GetMapping("/{id}")
-    @Operation(summary = "根據bookId取得書本", description = "根據ID回傳書本列表，包含出版社資訊")
-    public BookDto getBookById(@PathVariable Long id){
-        return bookService.getBookById(id);
+    @Operation(summary = "根據bookId取得書本", description = "根據 ID 回傳單一本書，包含出版社資訊")
+    public ResponseEntity<BookDto> getBookById(@PathVariable Long id){
+        BookDto bookById = bookService.getBookById(id);
+        return ResponseEntity.ok(bookById);
     }
 
     @PostMapping
